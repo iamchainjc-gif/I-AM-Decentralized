@@ -1,40 +1,1509 @@
-
 <!DOCTYPE html>
 
 <html lang="en">
-<head><script>
-if (!window.normalizeFingerprint) {
-  window.normalizeFingerprint = function(fp) {
-    try {
-      if (!fp) return '';
-      if (typeof fp.then === 'function') { console.warn('Fingerprint is a Promise'); return ''; }
-      if (ArrayBuffer.isView(fp)) {
-        return Array.from(fp).map(b => b.toString(16).padStart(2, '0')).join('');
-      }
-      return String(fp);
-    } catch (e) { return ''; }
-  };
-}
-</script>
+<head>
 <meta charset="utf-8"/>
-<meta content="
-    default-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* http://127.0.0.1:*;
-    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://esm.sh http://localhost:* http://127.0.0.1:* https://cdn.jsdelivr.net https://unpkg.com;
-    connect-src 'self' * ws: wss: http://localhost:* https://localhost:* http://127.0.0.1:* 
-                 ws://localhost:* wss://localhost:* ws://127.0.0.1:* 
-                 https://cdn.jsdelivr.net https://dns.google https://cloudflare-dns.com 
-                 http://localhost:5001/api/v0/add 
-                 https://node2.delegate.ipfs.io https://node3.delegate.ipfs.io https://ipfs.io 
-                 https://cloudflare-dns.com/dns-query
-                 wss://node0.preload.ipfs.io wss://node1.preload.ipfs.io wss://node3.preload.ipfs.io;
-    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://unpkg.com;
-    font-src 'self' https://fonts.gstatic.com;
-    img-src 'self' data: blob: https:;
-    base-uri 'self';
-" http-equiv="Content-Security-Policy"/>
-<title>SolaVia - Sovereign Civilization Protocol</title>
-<!-- ✅ Ensure NO async/defer -->
-<script src="sha3.js"></script>
+<title>⚡ I-AM-Chain — Sovereign Browser Universe</title>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { 
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+  background: linear-gradient(135deg, #0b0c10 0%, #1a1d29 100%); 
+  color: #00eaff; 
+  overflow-x: hidden;
+}
+.container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+header { 
+  background: rgba(31, 40, 51, 0.9); 
+  padding: 20px; 
+  border-bottom: 2px solid #00eaff; 
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+h1 { 
+  color: #00ffe0; 
+  text-align: center; 
+  font-size: 2em; 
+  text-shadow: 0 0 20px rgba(0, 255, 224, 0.5);
+}
+.tagline { 
+  text-align: center; 
+  color: #45a29e; 
+  margin-top: 5px; 
+  font-size: 0.9em;
+}
+.tabs { 
+  display: flex; 
+  gap: 5px; 
+  margin-top: 15px; 
+  flex-wrap: wrap; 
+  justify-content: center;
+}
+.tab { 
+  background: #1f2833; 
+  color: #66fcf1; 
+  border: 1px solid #00eaff55; 
+  padding: 10px 20px; 
+  cursor: pointer; 
+  border-radius: 8px 8px 0 0;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+.tab:hover { background: #2a3442; border-color: #00eaff; }
+.tab.active { 
+  background: linear-gradient(135deg, #00eaff22 0%, #00ffe022 100%); 
+  border-color: #00ffe0; 
+  color: #00ffe0;
+  box-shadow: 0 -2px 10px rgba(0, 255, 224, 0.3);
+}
+.tab-content { display: none; animation: fadeIn 0.3s ease; }
+.tab-content.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.card { 
+  background: rgba(31, 40, 51, 0.6); 
+  border: 1px solid #00eaff33; 
+  padding: 20px; 
+  margin: 15px 0; 
+  border-radius: 12px;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+.card h3 { 
+  color: #00ffe0; 
+  margin-bottom: 15px; 
+  font-size: 1.3em;
+  border-bottom: 1px solid #00eaff22;
+  padding-bottom: 10px;
+}
+button { 
+  background: linear-gradient(135deg, #1f2833 0%, #2a3442 100%); 
+  color: #00eaff; 
+  border: 1px solid #00eaff; 
+  padding: 10px 18px; 
+  margin: 4px; 
+  cursor: pointer; 
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  font-size: 0.95em;
+}
+button:hover { 
+  background: linear-gradient(135deg, #00eaff22 0%, #00ffe022 100%); 
+  box-shadow: 0 0 15px rgba(0, 234, 255, 0.4);
+  transform: translateY(-2px);
+}
+button:active { transform: translateY(0); }
+textarea, pre, input[type="text"], input[type="password"], input[type="file"], select { 
+  width: 100%; 
+  background: rgba(15, 23, 32, 0.8); 
+  color: #66fcf1; 
+  border: 1px solid #00eaff33; 
+  padding: 12px; 
+  border-radius: 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+  margin: 8px 0;
+}
+textarea { min-height: 120px; resize: vertical; }
+pre { 
+  max-height: 400px; 
+  overflow-y: auto; 
+  background: rgba(10, 14, 20, 0.9);
+  border-left: 3px solid #00eaff;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.block, .tx-item, .post-item, .msg-item { 
+  background: rgba(16, 20, 27, 0.8); 
+  border: 1px solid #00eaff55; 
+  padding: 12px; 
+  margin: 8px 0; 
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+.block:hover, .tx-item:hover, .post-item:hover, .msg-item:hover { 
+  border-color: #00ffe0; 
+  box-shadow: 0 0 10px rgba(0, 255, 224, 0.2);
+}
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+@media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+.status { 
+  display: inline-block; 
+  padding: 4px 12px; 
+  border-radius: 20px; 
+  font-size: 0.85em; 
+  font-weight: 600;
+  margin: 5px 0;
+}
+.status.success { background: #00ff8822; color: #00ff88; border: 1px solid #00ff88; }
+.status.pending { background: #ffaa0022; color: #ffaa00; border: 1px solid #ffaa00; }
+.status.error { background: #ff000022; color: #ff5555; border: 1px solid #ff5555; }
+.info { color: #45a29e; font-size: 0.9em; margin: 8px 0; }
+.schema-tree { 
+  background: rgba(10, 14, 20, 0.8); 
+  border: 1px solid #00eaff33; 
+  padding: 15px; 
+  border-radius: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.schema-node { 
+  padding: 8px; 
+  margin: 4px 0; 
+  background: rgba(31, 40, 51, 0.6); 
+  border-left: 3px solid #00eaff;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.schema-node:hover { background: rgba(31, 40, 51, 0.9); border-left-color: #00ffe0; }
+.chat-container { 
+  display: flex; 
+  flex-direction: column; 
+  height: 500px;
+  background: rgba(10, 14, 20, 0.8);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.chat-messages { 
+  flex: 1; 
+  overflow-y: auto; 
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.chat-msg { 
+  padding: 12px; 
+  border-radius: 12px; 
+  max-width: 80%;
+  animation: slideIn 0.3s ease;
+}
+@keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+.chat-msg.user { 
+  background: linear-gradient(135deg, #00eaff22 0%, #00ffe022 100%); 
+  align-self: flex-end; 
+  border: 1px solid #00eaff55;
+}
+.chat-msg.ai { 
+  background: rgba(31, 40, 51, 0.8); 
+  align-self: flex-start;
+  border: 1px solid #00eaff33;
+}
+.chat-input-container { 
+  display: flex; 
+  gap: 10px; 
+  padding: 15px; 
+  background: rgba(31, 40, 51, 0.6);
+  border-top: 1px solid #00eaff33;
+}
+.chat-input-container input { 
+  flex: 1; 
+  margin: 0;
+}
+.wallet-display { 
+  background: linear-gradient(135deg, #1f2833 0%, #2a3442 100%);
+  padding: 20px;
+  border-radius: 12px;
+  border: 2px solid #00eaff;
+  margin: 15px 0;
+}
+.wallet-display .did { 
+  font-family: 'Courier New', monospace; 
+  color: #00ffe0; 
+  word-break: break-all;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 10px;
+  border-radius: 6px;
+  margin: 10px 0;
+}
+.progress-bar { 
+  width: 100%; 
+  height: 6px; 
+  background: rgba(0, 234, 255, 0.2); 
+  border-radius: 3px; 
+  overflow: hidden;
+  margin: 10px 0;
+}
+.progress-bar-fill { 
+  height: 100%; 
+  background: linear-gradient(90deg, #00eaff 0%, #00ffe0 100%); 
+  transition: width 0.3s ease;
+  box-shadow: 0 0 10px rgba(0, 234, 255, 0.6);
+}
+.tooltip { 
+  position: relative; 
+  display: inline-block;
+}
+.tooltip .tooltiptext { 
+  visibility: hidden; 
+  background-color: rgba(31, 40, 51, 0.95); 
+  color: #00eaff; 
+  text-align: center; 
+  padding: 8px 12px; 
+  border-radius: 6px; 
+  position: absolute; 
+  z-index: 1; 
+  bottom: 125%; 
+  left: 50%; 
+  transform: translateX(-50%);
+  opacity: 0; 
+  transition: opacity 0.3s;
+  border: 1px solid #00eaff55;
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+.tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
+.badge { 
+  display: inline-block; 
+  padding: 3px 8px; 
+  background: rgba(0, 234, 255, 0.2); 
+  border: 1px solid #00eaff; 
+  border-radius: 12px; 
+  font-size: 0.75em; 
+  margin: 0 4px;
+}
+scrollbar-width: thin;
+scrollbar-color: #00eaff #1f2833;
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #1f2833; }
+::-webkit-scrollbar-thumb { background: #00eaff; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #00ffe0; }
+.loading { 
+  display: inline-block; 
+  width: 16px; 
+  height: 16px; 
+  border: 2px solid #00eaff33; 
+  border-top: 2px solid #00eaff; 
+  border-radius: 50%; 
+  animation: spin 0.8s linear infinite;
+  vertical-align: middle;
+  margin: 0 8px;
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<header>
+<h1>⚡ I-AM-Chain — Your Browser Becomes the Universe</h1>
+<p class="tagline">Sovereign Identity · Deterministic AI · Decentralized Everything</p>
+<div class="tabs">
+<button class="tab active" data-tab="wallet">🔑 Wallet/DID</button>
+<button class="tab" data-tab="chain">🧱 Chain</button>
+<button class="tab" data-tab="social">🌐 Social</button>
+<button class="tab" data-tab="messages">💬 Messages</button>
+<button class="tab" data-tab="pipeline">⚙️ Pipeline</button>
+<button class="tab" data-tab="schema">📋 Schema IDE</button>
+<button class="tab" data-tab="datasets">📂 Datasets</button>
+<button class="tab" data-tab="abi">🔧 ABI UI</button>
+<button class="tab" data-tab="ai">🤖 AI Assistant</button>
+</div>
+</header>
+<div class="container">
+<!-- WALLET / DID TAB -->
+<div class="tab-content active" id="wallet">
+<div class="card">
+<h3>🔑 Soulbound Identity</h3>
+<div class="wallet-display" id="walletStatus">
+<p class="info" id="storageStatus">💾 Local state auto-saves on exit</p>
+<p><strong>Status:</strong> <span class="status pending">Not Initialized</span></p>
+<p class="info">Your cryptographic identity lives entirely in this browser.</p>
+</div>
+<button id="createDID">✨ Create New DID</button>
+<button id="exportDID">💾 Export DID (VC)</button>
+<button id="importDIDBtn">📥 Import DID</button>
+<input accept=".json" id="importDIDFile" style="display:none;" type="file"/>
+</div>
+<div class="card">
+<h3>📊 Identity Details</h3>
+<pre id="didDetails">No identity created yet.</pre>
+</div>
+</div>
+<div class="card">
+<h3>💰 Token Balance</h3>
+<p id="walletBalance">Balance: 0 ⚡</p>
+<p class="info">Earn tokens for activity: blocks, posts, workflows.</p>
+</div>
+<!-- CHAIN TAB -->
+<div class="tab-content" id="chain">
+<div class="card">
+<h3>🧱 Local Sovereign Chain</h3>
+<p class="info">Blocks: <span id="blockCount">0</span> | State Root: <span id="stateRoot">—</span></p>
+<button id="createBlock">➕ Create Block</button>
+<button id="rollbackBlock">↩️ Rollback</button>
+<button id="snapshotChain">📸 Snapshot to IPFS</button>
+</div>
+<div class="card">
+<h3>🌐 Peer-to-Peer Sync</h3>
+<textarea id="peerOffer" placeholder="Paste offer JSON here..."></textarea>
+<button id="createOffer">📤 Create Offer</button>
+<button id="acceptOffer">📥 Accept Offer</button>
+<p class="info">Share offers between browsers to sync blocks and posts.</p>
+</div>
+<div class="card">
+<h3>📦 Block Explorer</h3>
+<div id="blockList"></div>
+</div>
+<div class="card">
+<h3>🔄 Transactions</h3>
+<input id="txData" placeholder="Transaction data (JSON)" type="text">
+<button id="submitTx">📤 Submit Transaction</button>
+<div id="txList"></div>
+</input></div>
+</div>
+<!-- SOCIAL TAB -->
+<div class="tab-content" id="social">
+<div class="card">
+<h3>📝 Create Post</h3>
+<textarea id="postContent" placeholder="What's on your mind? (Stored on IPFS)"></textarea>
+<button id="createPost">📢 Post to Network</button>
+</div>
+<div class="card">
+<h3>🌐 Social Feed</h3>
+<button id="refreshFeed">🔄 Refresh</button>
+<div id="socialFeed"></div>
+</div>
+<div class="card">
+<h3>👥 Follow System</h3>
+<input id="followDID" placeholder="Enter DID to follow" type="text"/>
+<button id="followUser">➕ Follow</button>
+<p class="info">Following: <span id="followingCount">0</span></p>
+</div>
+</div>
+<!-- MESSAGES TAB -->
+<div class="tab-content" id="messages">
+<div class="card">
+<h3>💬 Encrypted Messaging</h3>
+<input id="msgRecipient" placeholder="Recipient DID" type="text"/>
+<textarea id="msgContent" placeholder="Your message (encrypted end-to-end)"></textarea>
+<button id="sendMsg">🔒 Send Encrypted</button>
+</div>
+<div class="card">
+<h3>📬 Inbox</h3>
+<button id="refreshMsgs">🔄 Refresh</button>
+<div id="msgList"></div>
+</div>
+</div>
+<!-- PIPELINE TAB -->
+<div class="tab-content" id="pipeline">
+<div class="card">
+<h3>⚙️ Deterministic Pipeline Editor</h3>
+<textarea id="pipelineCode" rows="12">// Solavia-compatible deterministic pipeline
+export default async function pipeline(sv) {
+  // Stage 1: Input processing
+  const input = { numbers: [1, 2, 3, 4, 5], seed: sv.seed };
+  const doubled = input.numbers.map(n =&gt; n * 2);
+  await sv.stage("DoubleNumbers", input, doubled);
+  
+  // Stage 2: Compute statistics
+  const sum = doubled.reduce((a, b) =&gt; a + b, 0);
+  const stats = { sum, avg: sum / doubled.length, count: doubled.length };
+  await sv.stage("Statistics", doubled, stats);
+  
+  // Stage 3: Final result
+  const result = { ...stats, seed: sv.seed, timestamp: Date.now() };
+  await sv.stage("Result", stats, result);
+  
+  return result;
+}</textarea>
+<div class="grid-2">
+<div>
+<label>Seed:</label>
+<input id="pipelineSeed" type="text" value="1337"/>
+</div>
+<div>
+<button id="runPipeline">▶️ Run Pipeline</button>
+<button id="verifyProof">✅ Verify Proof</button>
+</div>
+</div>
+</div>
+<div class="card">
+<h3>📊 Pipeline Output</h3>
+<pre id="pipelineOutput">No pipeline executed yet.</pre>
+</div>
+<div class="card">
+<h3>🔗 Merkle Proof</h3>
+<pre id="merkleProof">Run pipeline to generate proof.</pre>
+</div>
+</div>
+<!-- SCHEMA IDE TAB -->
+<div class="tab-content" id="schema">
+<div class="card">
+<h3>📋 Schema IDE — Workflow Designer</h3>
+<p class="info">Design multi-step workflows with deterministic execution</p>
+<div class="grid-2">
+<div>
+<label>Workflow Name:</label>
+<input id="workflowName" placeholder="My Workflow" type="text"/>
+<label>Step Type:</label>
+<select id="stepType">
+<option value="transform">Transform Data</option>
+<option value="fetch">Fetch API</option>
+<option value="compute">Compute</option>
+<option value="store">Store to IPFS</option>
+<option value="verify">Verify Hash</option>
+</select>
+<button id="addStep">➕ Add Step</button>
+</div>
+<div>
+<label>Step Configuration:</label>
+<textarea id="stepConfig" placeholder='{"field": "value"}'></textarea>
+<button id="saveWorkflow">💾 Save Workflow</button>
+<button id="executeWorkflow">▶️ Execute</button>
+<button id="compileToPipeline">🧬 Compile → Pipeline</button>
+</div>
+</div>
+</div>
+<div class="card">
+<h3>🌳 Workflow Tree</h3>
+<div class="schema-tree" id="schemaTree">
+<p class="info">No steps added yet.</p>
+</div>
+</div>
+<div class="card">
+<h3>📤 Workflow Output</h3>
+<pre id="workflowOutput">Execute workflow to see results.</pre>
+</div>
+</div>
+<!-- DATASETS TAB -->
+<div class="tab-content" id="datasets">
+<div class="card">
+<h3>📂 Dataset Management</h3>
+<p class="info">Upload, shard, and distribute datasets across IPFS</p>
+<input id="datasetFiles" multiple="" type="file"/>
+<label>Chunk Size (MB):</label>
+<input id="chunkSize" max="100" min="1" type="number" value="10"/>
+<button id="uploadDataset">📦 Shard &amp; Upload</button>
+</div>
+<div class="card">
+<h3>📊 Uploaded Datasets</h3>
+<div id="datasetList"></div>
+</div>
+<div class="card">
+<h3>🔍 Retrieve Dataset</h3>
+<input id="datasetCID" placeholder="Enter CID" type="text"/>
+<button id="retrieveDataset">📥 Retrieve</button>
+<pre id="datasetContent"></pre>
+</div>
+</div>
+<!-- ABI UI TAB -->
+<div class="tab-content" id="abi">
+<div class="card">
+<h3>🔧 ABI → UI Generator</h3>
+<p class="info">Drop a Solidity ABI JSON to auto-generate interactive forms</p>
+<textarea id="abiInput" placeholder="Paste Solidity ABI JSON here..." rows="8"></textarea>
+<button id="generateUI">✨ Generate UI</button>
+</div>
+<div class="card">
+<h3>🎛️ Generated Interface</h3>
+<div id="abiUIOutput"></div>
+</div>
+<div class="card">
+<h3>📜 Execution Log</h3>
+<pre id="abiLog">No executions yet.</pre>
+</div>
+</div>
+<!-- AI ASSISTANT TAB -->
+<div class="tab-content" id="ai">
+<div class="card">
+<h3>🤖 AI Assistant</h3>
+<p class="info">Context-aware AI that understands your chain, workflows, and social graph</p>
+<div class="chat-container">
+<div class="chat-messages" id="chatMessages">
+<div class="chat-msg ai">
+          👋 Hello! I'm your I-AM-Chain AI assistant. I can help you with:
+          <br/>• Understanding blockchain state
+          <br/>• Building workflows
+          <br/>• Analyzing social interactions
+          <br/>• Debugging pipelines
+          <br/>Ask me anything!
+        </div>
+</div>
+<div class="card">
+<h3>🧠 Deterministic AI Extensions</h3>
+<button id="suggestPipeline">💡 Suggest Deterministic Pipeline</button>
+<p class="info">AI analyzes your chain and proposes a runnable pipeline in the Pipeline tab.</p>
+</div>
+<div class="chat-input-container">
+<input id="chatInput" placeholder="Ask me anything..." type="text"/>
+<button id="sendChat">💬 Send</button>
+</div>
+</div>
+</div>
+<div class="card">
+<h3>⚙️ AI Configuration</h3>
+<label>API Key (optional - uses Emergent LLM key if empty):</label>
+<input id="aiApiKey" placeholder="Leave empty to use Emergent key" type="password"/>
+<label>Model:</label>
+<select id="aiModel">
+<option value="gpt-4">GPT-4</option>
+<option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+<option value="claude">Claude</option>
+</select>
+<button id="testAI">🧪 Test Connection</button>
+</div>
+</div>
+</div>
+<div id="dashboardContainer"></div>
+<script type="module">
+// ============================================================================
+// CORE IMPORTS & INITIALIZATION
+// ============================================================================
+import { createHelia } from "https://esm.sh/helia@5";
+import { MemoryBlockstore } from "https://esm.sh/blockstore-core@5";
+import { MemoryDatastore } from "https://esm.sh/datastore-core@10";
+import { unixfs } from "https://esm.sh/@helia/unixfs@4";
+
+// Global State
+const STATE = {
+  helia: null,
+  fs: null,
+  did: null,
+  chain: [],
+  transactions: [],
+  socialPosts: [],
+  messages: [],
+  following: [],
+  workflows: [],
+  datasets: [],
+  currentWorkflow: { name: "", steps: [] }
+};
+
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+async function sha256Hex(data) {
+  const str = typeof data === "string" ? data : JSON.stringify(data);
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+function log(element, message, type = "info") {
+  const el = document.getElementById(element);
+  if (!el) return;
+  const timestamp = new Date().toLocaleTimeString();
+  const prefix = type === "error" ? "❌" : type === "success" ? "✅" : "ℹ️";
+  el.textContent += `\n[${timestamp}] ${prefix} ${message}`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function updateStatus(element, text, statusClass) {
+  const el = document.getElementById(element);
+  if (el) {
+    el.innerHTML = `<strong>Status:</strong> <span class="status ${statusClass}">${text}</span>`;
+  }
+}
+
+// ============================================================================
+// IPFS / HELIA INITIALIZATION
+// ============================================================================
+async function initHelia() {
+  if (STATE.helia) return STATE.helia;
+  
+  updateStatus("walletStatus", "Initializing IPFS...", "pending");
+  STATE.helia = await createHelia({
+    blockstore: new MemoryBlockstore(),
+    datastore: new MemoryDatastore()
+  });
+  STATE.fs = unixfs(STATE.helia);
+  updateStatus("walletStatus", "IPFS Ready", "success");
+  return STATE.helia;
+}
+
+// ============================================================================
+// DID / WALLET SYSTEM
+// ============================================================================
+async function createDID() {
+  const keyPair = await crypto.subtle.generateKey(
+    { name: "ECDSA", namedCurve: "P-256" },
+    true,
+    ["sign", "verify"]
+  );
+  
+  const publicKeyJWK = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
+  const privateKeyJWK = await crypto.subtle.exportKey("jwk", keyPair.privateKey);
+  
+  const did = `did:key:${await sha256Hex(publicKeyJWK)}`;
+  
+  STATE.did = {
+    id: did,
+    publicKey: publicKeyJWK,
+    privateKey: privateKeyJWK,
+    created: new Date().toISOString()
+  };
+  
+  localStorage.setItem("i-am-chain-did", JSON.stringify(STATE.did));
+  
+  document.getElementById("didDetails").textContent = JSON.stringify(STATE.did, null, 2);
+  document.getElementById("walletStatus").innerHTML = `
+    <p><strong>Status:</strong> <span class="status success">Active</span></p>
+    <p><strong>DID:</strong></p>
+    <div class="did">${did}</div>
+    <p class="info">Created: ${new Date(STATE.did.created).toLocaleString()}</p>
+  `;
+  
+  log("pipelineOutput", "DID created successfully", "success");
+}
+
+async function exportDID() {
+  if (!STATE.did) {
+    alert("No DID to export. Create one first!");
+    return;
+  }
+  
+  const vc = {
+    "@context": ["https://www.w3.org/2018/credentials/v1"],
+    type: ["VerifiableCredential", "I-AM-Chain-Identity"],
+    issuer: STATE.did.id,
+    issuanceDate: new Date().toISOString(),
+    credentialSubject: STATE.did
+  };
+  
+  const blob = new Blob([JSON.stringify(vc, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `i-am-chain-did-${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function importDID(file) {
+  const text = await file.text();
+  const vc = JSON.parse(text);
+  STATE.did = vc.credentialSubject;
+  localStorage.setItem("i-am-chain-did", JSON.stringify(STATE.did));
+  document.getElementById("didDetails").textContent = JSON.stringify(STATE.did, null, 2);
+  updateStatus("walletStatus", "DID Imported", "success");
+  alert("DID imported successfully!");
+}
+
+// Load existing DID
+function loadDID() {
+  const stored = localStorage.getItem("i-am-chain-did");
+  if (stored) {
+    STATE.did = JSON.parse(stored);
+    document.getElementById("didDetails").textContent = JSON.stringify(STATE.did, null, 2);
+    document.getElementById("walletStatus").innerHTML = `
+      <p><strong>Status:</strong> <span class="status success">Active</span></p>
+      <p><strong>DID:</strong></p>
+      <div class="did">${STATE.did.id}</div>
+    `;
+  }
+}
+
+// ============================================================================
+// BLOCKCHAIN / CHAIN SYSTEM
+// ============================================================================
+async function createBlock() {
+  await initHelia();
+  
+  const prevHash = STATE.chain.length > 0 
+    ? await sha256Hex(STATE.chain[STATE.chain.length - 1])
+    : "0".repeat(64);
+  
+  const block = {
+    index: STATE.chain.length,
+    timestamp: Date.now(),
+    transactions: [...STATE.transactions],
+    prevHash,
+    stateRoot: await sha256Hex({ chain: STATE.chain, txs: STATE.transactions })
+  };
+  
+  block.hash = await sha256Hex(block);
+  STATE.chain.push(block);
+  STATE.transactions = [];
+  
+  // Store to IPFS
+  const bytes = new TextEncoder().encode(JSON.stringify(block));
+  const cid = await STATE.fs.addBytes(bytes);
+  block.cid = cid.toString();
+  
+  updateChainUI();
+  log("pipelineOutput", `Block #${block.index} created with hash: ${block.hash.slice(0, 16)}...`, "success");
+}
+
+function updateChainUI() {
+  document.getElementById("blockCount").textContent = STATE.chain.length;
+  document.getElementById("stateRoot").textContent = STATE.chain.length > 0 
+    ? STATE.chain[STATE.chain.length - 1].stateRoot.slice(0, 16) + "..."
+    : "—";
+  
+  const blockList = document.getElementById("blockList");
+  blockList.innerHTML = STATE.chain.map(block => `
+    <div class="block">
+      <strong>Block #${block.index}</strong>
+      <br><small>Hash: ${block.hash.slice(0, 32)}...</small>
+      <br><small>Transactions: ${block.transactions.length}</small>
+      <br><small>CID: ${block.cid || "N/A"}</small>
+    </div>
+  `).reverse().join("");
+}
+
+async function submitTransaction() {
+  const data = document.getElementById("txData").value.trim();
+  if (!data) return alert("Enter transaction data");
+  
+  try {
+    const txData = JSON.parse(data);
+    const tx = {
+      id: await sha256Hex(Date.now() + Math.random()),
+      from: STATE.did?.id || "anonymous",
+      data: txData,
+      timestamp: Date.now()
+    };
+    
+    STATE.transactions.push(tx);
+    updateTxUI();
+    document.getElementById("txData").value = "";
+    log("pipelineOutput", "Transaction submitted", "success");
+  } catch (e) {
+    alert("Invalid JSON: " + e.message);
+  }
+}
+
+function updateTxUI() {
+  const txList = document.getElementById("txList");
+  txList.innerHTML = STATE.transactions.map(tx => `
+    <div class="tx-item">
+      <strong>TX: ${tx.id.slice(0, 16)}...</strong>
+      <br><small>From: ${tx.from.slice(0, 30)}...</small>
+      <br><small>Data: ${JSON.stringify(tx.data)}</small>
+    </div>
+  `).reverse().join("");
+}
+
+// ============================================================================
+// SOCIAL GRAPH & POSTS
+// ============================================================================
+async function createPost() {
+  await initHelia();
+  if (!STATE.did) return alert("Create a DID first!");
+  
+  const content = document.getElementById("postContent").value.trim();
+  if (!content) return alert("Write something!");
+  
+  const post = {
+    id: await sha256Hex(Date.now() + Math.random()),
+    author: STATE.did.id,
+    content,
+    timestamp: Date.now()
+  };
+  
+  // Store to IPFS
+  const bytes = new TextEncoder().encode(JSON.stringify(post));
+  const cid = await STATE.fs.addBytes(bytes);
+  post.cid = cid.toString();
+  
+  STATE.socialPosts.push(post);
+  updateSocialUI();
+  document.getElementById("postContent").value = "";
+  log("pipelineOutput", "Post published to IPFS", "success");
+}
+
+function updateSocialUI() {
+  const feed = document.getElementById("socialFeed");
+  feed.innerHTML = STATE.socialPosts.map(post => `
+    <div class="post-item">
+      <strong>${post.author.slice(0, 30)}...</strong>
+      <br>${post.content}
+      <br><small>${new Date(post.timestamp).toLocaleString()}</small>
+      <br><small class="badge">CID: ${post.cid.slice(0, 20)}...</small>
+    </div>
+  `).reverse().join("");
+}
+
+function followUser() {
+  const did = document.getElementById("followDID").value.trim();
+  if (!did) return alert("Enter a DID");
+  if (STATE.following.includes(did)) return alert("Already following");
+  
+  STATE.following.push(did);
+  document.getElementById("followingCount").textContent = STATE.following.length;
+  document.getElementById("followDID").value = "";
+  log("pipelineOutput", `Now following: ${did.slice(0, 30)}...`, "success");
+}
+
+// ============================================================================
+// ENCRYPTED MESSAGING
+// ============================================================================
+async function sendMessage() {
+  if (!STATE.did) return alert("Create a DID first!");
+  
+  const recipient = document.getElementById("msgRecipient").value.trim();
+  const content = document.getElementById("msgContent").value.trim();
+  if (!recipient || !content) return alert("Fill all fields");
+  
+  // Simple encryption simulation (in production, use proper E2E encryption)
+  const encrypted = btoa(content + ":" + STATE.did.id);
+  
+  const msg = {
+    id: await sha256Hex(Date.now() + Math.random()),
+    from: STATE.did.id,
+    to: recipient,
+    encrypted,
+    timestamp: Date.now()
+  };
+  
+  STATE.messages.push(msg);
+  updateMessagesUI();
+  document.getElementById("msgContent").value = "";
+  log("pipelineOutput", "Encrypted message sent", "success");
+}
+
+function updateMessagesUI() {
+  const msgList = document.getElementById("msgList");
+  msgList.innerHTML = STATE.messages.map(msg => {
+    // Decrypt (simplified)
+    const decrypted = atob(msg.encrypted).split(":")[0];
+    return `
+      <div class="msg-item">
+        <strong>From: ${msg.from.slice(0, 25)}...</strong>
+        <br>To: ${msg.to.slice(0, 25)}...
+        <br>Message: ${decrypted}
+        <br><small>${new Date(msg.timestamp).toLocaleString()}</small>
+      </div>
+    `;
+  }).reverse().join("");
+}
+
+// ============================================================================
+// DETERMINISTIC PIPELINE (SOLAVIA)
+// ============================================================================
+class SolaviaRuntime {
+  constructor(seed = 1337) {
+    this.seed = seed;
+    this.stages = [];
+  }
+  
+  async stage(name, input, output) {
+    const entry = {
+      name,
+      input,
+      output,
+      inputHash: await sha256Hex(input),
+      outputHash: await sha256Hex(output),
+      timestamp: Date.now()
+    };
+    this.stages.push(entry);
+  }
+  
+  async merkleRoot() {
+    if (this.stages.length === 0) return null;
+    let hashes = this.stages.map(s => s.outputHash);
+    while (hashes.length > 1) {
+      const next = [];
+      for (let i = 0; i < hashes.length; i += 2) {
+        const pair = hashes[i] + (hashes[i + 1] || hashes[i]);
+        next.push(await sha256Hex(pair));
+      }
+      hashes = next;
+    }
+    return hashes[0];
+  }
+  
+  async proof() {
+    return {
+      version: "I-AM-Chain-1.0",
+      seed: this.seed,
+      stages: this.stages,
+      root: await this.merkleRoot(),
+      timestamp: new Date().toISOString()
+    };
+  }
+}
+
+async function runPipeline() {
+  const code = document.getElementById("pipelineCode").value;
+  const seed = parseInt(document.getElementById("pipelineSeed").value) || 1337;
+  
+  try {
+    log("pipelineOutput", "Executing pipeline...", "info");
+    
+    const blob = new Blob([code], { type: "text/javascript" });
+    const url = URL.createObjectURL(blob);
+    const module = await import(url);
+    URL.revokeObjectURL(url);
+    
+    const sv = new SolaviaRuntime(seed);
+    const result = await module.default(sv);
+    const proof = await sv.proof();
+    
+    document.getElementById("pipelineOutput").textContent = 
+      "Result:\n" + JSON.stringify(result, null, 2) + 
+      "\n\nMerkle Root: " + proof.root +
+      "\nStages: " + proof.stages.length;
+    
+    document.getElementById("merkleProof").textContent = JSON.stringify(proof, null, 2);
+    
+    log("pipelineOutput", "Pipeline executed successfully", "success");
+  } catch (e) {
+    log("pipelineOutput", "Pipeline error: " + e.message, "error");
+    document.getElementById("pipelineOutput").textContent = "Error: " + e.stack;
+  }
+}
+
+async function verifyProof() {
+  const proofText = document.getElementById("merkleProof").textContent;
+  try {
+    const proof = JSON.parse(proofText);
+    
+    // Recompute Merkle root
+    let hashes = proof.stages.map(s => s.outputHash);
+    while (hashes.length > 1) {
+      const next = [];
+      for (let i = 0; i < hashes.length; i += 2) {
+        const pair = hashes[i] + (hashes[i + 1] || hashes[i]);
+        next.push(await sha256Hex(pair));
+      }
+      hashes = next;
+    }
+    const computedRoot = hashes[0];
+    
+    if (computedRoot === proof.root) {
+      alert("✅ Proof VALID! Merkle root matches.");
+      log("pipelineOutput", "Proof verification: VALID", "success");
+    } else {
+      alert("❌ Proof INVALID! Merkle root mismatch.");
+      log("pipelineOutput", "Proof verification: INVALID", "error");
+    }
+  } catch (e) {
+    alert("Error verifying proof: " + e.message);
+  }
+}
+
+// ============================================================================
+// SCHEMA IDE / WORKFLOW DESIGNER
+// ============================================================================
+function addWorkflowStep() {
+  const stepType = document.getElementById("stepType").value;
+  const config = document.getElementById("stepConfig").value.trim();
+  
+  let configObj = {};
+  if (config) {
+    try {
+      configObj = JSON.parse(config);
+    } catch (e) {
+      alert("Invalid JSON config");
+      return;
+    }
+  }
+  
+  const step = {
+    id: Date.now(),
+    type: stepType,
+    config: configObj
+  };
+  
+  STATE.currentWorkflow.steps.push(step);
+  updateSchemaTree();
+  document.getElementById("stepConfig").value = "";
+}
+
+function updateSchemaTree() {
+  const tree = document.getElementById("schemaTree");
+  if (STATE.currentWorkflow.steps.length === 0) {
+    tree.innerHTML = '<p class="info">No steps added yet.</p>';
+    return;
+  }
+  
+  tree.innerHTML = STATE.currentWorkflow.steps.map((step, idx) => `
+    <div class="schema-node">
+      <strong>Step ${idx + 1}: ${step.type}</strong>
+      <br><small>${JSON.stringify(step.config)}</small>
+    </div>
+  `).join("");
+}
+
+function saveWorkflow() {
+  const name = document.getElementById("workflowName").value.trim() || "Unnamed";
+  STATE.currentWorkflow.name = name;
+  STATE.workflows.push({ ...STATE.currentWorkflow });
+  alert(`Workflow "${name}" saved!`);
+  log("workflowOutput", `Workflow "${name}" saved with ${STATE.currentWorkflow.steps.length} steps`, "success");
+}
+
+async function executeWorkflow() {
+  if (STATE.currentWorkflow.steps.length === 0) {
+    return alert("Add steps first!");
+  }
+  
+  const sv = new SolaviaRuntime(1337);
+  let lastOutput = null;
+  
+  for (const step of STATE.currentWorkflow.steps) {
+    const input = lastOutput || step.config;
+    let output;
+    
+    switch (step.type) {
+      case "transform":
+        output = { ...input, transformed: true };
+        break;
+      case "compute":
+        output = { result: Math.random() * 100 };
+        break;
+      case "fetch":
+        output = { fetched: "simulated data" };
+        break;
+      case "store":
+        output = { stored: true, cid: "QmSimulated" };
+        break;
+      case "verify":
+        output = { verified: await sha256Hex(input) };
+        break;
+      default:
+        output = input;
+    }
+    
+    await sv.stage(step.type, input, output);
+    lastOutput = output;
+  }
+  
+  const proof = await sv.proof();
+  document.getElementById("workflowOutput").textContent = 
+    "Workflow Result:\n" + JSON.stringify(lastOutput, null, 2) +
+    "\n\nMerkle Root: " + proof.root;
+  
+  log("workflowOutput", "Workflow executed successfully", "success");
+}
+
+// ============================================================================
+// DATASET MANAGEMENT
+// ============================================================================
+async function uploadDataset() {
+  await initHelia();
+  const files = [...document.getElementById("datasetFiles").files];
+  const chunkSizeMB = parseInt(document.getElementById("chunkSize").value) || 10;
+  const chunkSize = chunkSizeMB * 1024 * 1024;
+  
+  if (files.length === 0) return alert("Select files first!");
+  
+  for (const file of files) {
+    log("pipelineOutput", `Processing ${file.name}...`, "info");
+    const buffer = await file.arrayBuffer();
+    const chunks = [];
+    
+    let offset = 0;
+    let chunkNum = 0;
+    while (offset < buffer.byteLength) {
+      const chunk = buffer.slice(offset, offset + chunkSize);
+      const cid = await STATE.fs.addBytes(new Uint8Array(chunk));
+      chunks.push(cid.toString());
+      chunkNum++;
+      offset += chunkSize;
+    }
+    
+    const dataset = {
+      name: file.name,
+      size: file.size,
+      chunks,
+      timestamp: Date.now()
+    };
+    
+    STATE.datasets.push(dataset);
+    log("pipelineOutput", `${file.name}: ${chunks.length} chunks uploaded`, "success");
+  }
+  
+  updateDatasetUI();
+}
+
+function updateDatasetUI() {
+  const list = document.getElementById("datasetList");
+  list.innerHTML = STATE.datasets.map(ds => `
+    <div class="block">
+      <strong>${ds.name}</strong> (${(ds.size / 1024 / 1024).toFixed(2)} MB)
+      <br><small>Chunks: ${ds.chunks.length}</small>
+      <br><small>${new Date(ds.timestamp).toLocaleString()}</small>
+    </div>
+  `).join("");
+}
+
+async function retrieveDataset() {
+  await initHelia();
+  const cid = document.getElementById("datasetCID").value.trim();
+  if (!cid) return alert("Enter a CID");
+  
+  try {
+    let content = new Uint8Array();
+    for await (const chunk of STATE.fs.cat(cid)) {
+      const joined = new Uint8Array(content.length + chunk.length);
+      joined.set(content);
+      joined.set(chunk, content.length);
+      content = joined;
+    }
+    
+    const text = new TextDecoder().decode(content);
+    document.getElementById("datasetContent").textContent = text;
+    log("pipelineOutput", "Dataset retrieved successfully", "success");
+  } catch (e) {
+    alert("Failed to retrieve: " + e.message);
+    log("pipelineOutput", "Dataset retrieval failed: " + e.message, "error");
+  }
+}
+
+// ============================================================================
+// ABI → UI GENERATOR
+// ============================================================================
+function generateABIUI() {
+  const abiText = document.getElementById("abiInput").value.trim();
+  if (!abiText) return alert("Paste ABI JSON first!");
+  
+  try {
+    const abi = JSON.parse(abiText);
+    const output = document.getElementById("abiUIOutput");
+    output.innerHTML = "";
+    
+    abi.forEach(item => {
+      if (item.type === "function") {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.innerHTML = `
+          <h4>${item.name}</h4>
+          ${item.inputs.map(input => `
+            <label>${input.name} (${input.type}):</label>
+            <input type="text" class="abi-input" data-name="${input.name}" placeholder="${input.type}" />
+          `).join("")}
+          <button onclick="executeABIFunction('${item.name}')">🔧 Execute</button>
+        `;
+        output.appendChild(card);
+      }
+    });
+    
+    log("abiLog", "UI generated for " + abi.length + " functions", "success");
+  } catch (e) {
+    alert("Invalid ABI JSON: " + e.message);
+  }
+}
+
+window.executeABIFunction = function(funcName) {
+  const inputs = [...document.querySelectorAll(".abi-input")].map(inp => ({
+    name: inp.dataset.name,
+    value: inp.value
+  }));
+  
+  log("abiLog", `Executing ${funcName} with inputs: ${JSON.stringify(inputs)}`, "info");
+  
+  // Simulate execution
+  setTimeout(() => {
+    log("abiLog", `✅ ${funcName} executed successfully (simulated)`, "success");
+  }, 500);
+};
+
+// ============================================================================
+// AI ASSISTANT
+// ============================================================================
+async function sendChatMessage() {
+  const input = document.getElementById("chatInput").value.trim();
+  if (!input) return;
+  
+  const chatMessages = document.getElementById("chatMessages");
+  
+  // Add user message
+  const userMsg = document.createElement("div");
+  userMsg.className = "chat-msg user";
+  userMsg.textContent = input;
+  chatMessages.appendChild(userMsg);
+  
+  document.getElementById("chatInput").value = "";
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  
+  // Simulate AI response
+  const aiMsg = document.createElement("div");
+  aiMsg.className = "chat-msg ai";
+  aiMsg.innerHTML = '<span class="loading"></span> Thinking...';
+  chatMessages.appendChild(aiMsg);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  
+  // Simulate API call (in production, call actual LLM API)
+  setTimeout(() => {
+    const context = {
+      chain: STATE.chain.length,
+      posts: STATE.socialPosts.length,
+      messages: STATE.messages.length,
+      hasDID: !!STATE.did
+    };
+    
+    let response = "I can see you have ";
+    response += context.hasDID ? "a DID configured, " : "no DID yet, ";
+    response += `${context.chain} blocks in your chain, `;
+    response += `${context.posts} social posts, and ${context.messages} messages. `;
+    response += "How can I help you build or analyze your sovereign network?";
+    
+    aiMsg.textContent = response;
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }, 1000);
+}
+
+function testAIConnection() {
+  alert("AI connection test: This would connect to Emergent LLM or your configured API key. Feature coming soon!");
+}
+
+
+
+// ============================================================================
+// NEW FUNCTIONAL EXTENSIONS FOR I-AM-CHAIN
+// ============================================================================
+
+// Persistent Sovereign State
+async function initStorage() {
+  const persisted = localStorage.getItem("i-am-chain-state");
+  if (persisted) {
+    const state = JSON.parse(persisted);
+    Object.assign(STATE, state);
+    updateChainUI?.();
+    updateSocialUI?.();
+    updateMessagesUI?.();
+    updateDatasetUI?.();
+    log("pipelineOutput", "State restored from localStorage", "success");
+  }
+}
+function saveState() {
+  const toSave = {
+    chain: STATE.chain,
+    transactions: STATE.transactions,
+    socialPosts: STATE.socialPosts,
+    messages: STATE.messages,
+    datasets: STATE.datasets,
+    following: STATE.following,
+    tokenBalance: STATE.tokenBalance || 0
+  };
+  localStorage.setItem("i-am-chain-state", JSON.stringify(toSave));
+}
+window.addEventListener("beforeunload", saveState);
+
+// P2P Sync Layer
+class PeerNetwork {
+  constructor() { this.peers = {}; }
+  async connect(remoteOffer) {
+    const pc = new RTCPeerConnection();
+    const channel = pc.createDataChannel("i-am-sync");
+    channel.onmessage = (e) => this.receive(JSON.parse(e.data));
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    return offer;
+  }
+  async answer(remoteDesc) {
+    const pc = new RTCPeerConnection();
+    pc.ondatachannel = (e) => {
+      const channel = e.channel;
+      channel.onmessage = (ev) => this.receive(JSON.parse(ev.data));
+      this.peers[remoteDesc] = channel;
+    };
+    await pc.setRemoteDescription(remoteDesc);
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    return answer;
+  }
+  broadcast(obj) {
+    Object.values(this.peers).forEach(ch => ch.readyState === "open" && ch.send(JSON.stringify(obj)));
+  }
+  receive(data) {
+    if (data.type === "block") {
+      STATE.chain.push(data.payload);
+      updateChainUI?.();
+    } else if (data.type === "post") {
+      STATE.socialPosts.push(data.payload);
+      updateSocialUI?.();
+    }
+    log("pipelineOutput", `Received ${data.type} from peer`, "info");
+  }
+}
+const P2P = new PeerNetwork();
+
+// Token Economy
+STATE.tokenBalance = STATE.tokenBalance || 0;
+function mintTokens(eventType) {
+  const rewards = { block: 10, post: 3, message: 1, workflow: 5 };
+  STATE.tokenBalance += rewards[eventType] || 0;
+  renderBalance();
+  saveState();
+}
+function renderBalance() {
+  let el = document.getElementById("walletBalance");
+  if (!el) {
+    el = document.createElement("p");
+    el.id = "walletBalance";
+    document.querySelector("#wallet .card").appendChild(el);
+  }
+  el.innerHTML = `💰 <strong>Balance:</strong> ${STATE.tokenBalance.toFixed(2)} ⚡`;
+}
+document.addEventListener("blockCreated", () => mintTokens("block"));
+document.addEventListener("postCreated", () => mintTokens("post"));
+document.addEventListener("workflowExecuted", () => mintTokens("workflow"));
+
+// AI Suggested Pipeline Builder
+async function aiSuggestPipeline(prompt = "analyze chain and propose new workflow") {
+  const ctx = {
+    blocks: STATE.chain.length,
+    posts: STATE.socialPosts.length,
+    messages: STATE.messages.length,
+    datasets: STATE.datasets.map(d => d.name),
+  };
+  const contextString = JSON.stringify(ctx, null, 2);
+  const seed = Math.floor(Math.random() * 9999);
+  const suggestion = `// Suggested deterministic pipeline
+export default async function pipeline(sv) {
+  const info = ${JSON.stringify(ctx)};
+  await sv.stage("AnalyzeState", info, { summary: "ok" });
+  const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(info.blocks.toString()));
+  await sv.stage("ComputeHash", info, Array.from(new Uint8Array(hash)));
+  return { summary: "Generated deterministically", seed: ${seed} };
+}`;
+  document.getElementById("pipelineCode").value = suggestion;
+  log("pipelineOutput", "AI generated new pipeline suggestion", "success");
+}
+
+// Dashboard Visualization
+function renderDashboard() {
+  const canvas = document.createElement("canvas");
+  canvas.id = "chainChart";
+  const card = document.createElement("div");
+  card.className = "card";
+  card.innerHTML = "<h3>📈 Chain Activity Monitor</h3>";
+  card.appendChild(canvas);
+  document.getElementById("chain").appendChild(card);
+  const ctx = canvas.getContext("2d");
+  const chart = new Chart(ctx, {
+    type: "line",
+    data: { labels: [], datasets: [{ label: "Blocks", data: [], borderWidth: 2 }] },
+    options: { scales: { y: { beginAtZero: true } } }
+  });
+  setInterval(() => {
+    chart.data.labels.push(new Date().toLocaleTimeString());
+    chart.data.datasets[0].data.push(STATE.chain.length);
+    if (chart.data.labels.length > 20) {
+      chart.data.labels.shift();
+      chart.data.datasets[0].data.shift();
+    }
+    chart.update();
+  }, 5000);
+}
+
+// Schema Compiler
+function compileWorkflowToPipeline() {
+  if (!STATE.currentWorkflow || STATE.currentWorkflow.steps.length === 0) {
+    alert("Add steps first!");
+    return;
+  }
+  const lines = [
+    "// Auto-generated pipeline from Schema IDE",
+    "export default async function pipeline(sv) {"
+  ];
+  for (const step of STATE.currentWorkflow.steps) {
+    lines.push(`  // Step: ${step.type}`);
+    lines.push(`  await sv.stage("${step.type}", ${JSON.stringify(step.config)}, { status: "done" });`);
+  }
+  lines.push("  return { success: true, totalSteps: " + STATE.currentWorkflow.steps.length + " };");
+  lines.push("}");
+  document.getElementById("pipelineCode").value = lines.join("\n");
+  log("workflowOutput", "Workflow compiled into executable pipeline", "success");
+}
+
+// ============================================================================
+// TAB NAVIGATION
+// ============================================================================
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    const target = tab.dataset.tab;
+    
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+    
+    tab.classList.add("active");
+    document.getElementById(target).classList.add("active");
+  });
+});
+
+// ============================================================================
+// EVENT LISTENERS
+// ============================================================================
+document.getElementById("createDID").onclick = createDID;
+document.getElementById("exportDID").onclick = exportDID;
+document.getElementById("importDIDBtn").onclick = () => document.getElementById("importDIDFile").click();
+document.getElementById("importDIDFile").onchange = (e) => {
+  if (e.target.files[0]) importDID(e.target.files[0]);
+};
+
+document.getElementById("createBlock").onclick = createBlock;
+document.getElementById("submitTx").onclick = submitTransaction;
+document.getElementById("rollbackBlock").onclick = () => {
+  if (STATE.chain.length > 0) {
+    STATE.chain.pop();
+    updateChainUI();
+    log("pipelineOutput", "Block rolled back", "success");
+  }
+};
+document.getElementById("snapshotChain").onclick = async () => {
+  await initHelia();
+  const snapshot = JSON.stringify(STATE.chain);
+  const bytes = new TextEncoder().encode(snapshot);
+  const cid = await STATE.fs.addBytes(bytes);
+  alert(`Chain snapshot stored to IPFS: ${cid}`);
+  log("pipelineOutput", `Snapshot CID: ${cid}`, "success");
+};
+
+document.getElementById("createPost").onclick = createPost;
+document.getElementById("refreshFeed").onclick = updateSocialUI;
+document.getElementById("followUser").onclick = followUser;
+
+document.getElementById("sendMsg").onclick = sendMessage;
+document.getElementById("refreshMsgs").onclick = updateMessagesUI;
+
+document.getElementById("runPipeline").onclick = runPipeline;
+document.getElementById("verifyProof").onclick = verifyProof;
+
+document.getElementById("addStep").onclick = addWorkflowStep;
+document.getElementById("saveWorkflow").onclick = saveWorkflow;
+document.getElementById("executeWorkflow").onclick = executeWorkflow;
+
+document.getElementById("uploadDataset").onclick = uploadDataset;
+document.getElementById("retrieveDataset").onclick = retrieveDataset;
+
+document.getElementById("generateUI").onclick = generateABIUI;
+
+document.getElementById("sendChat").onclick = sendChatMessage;
+document.getElementById("chatInput").onkeypress = (e) => {
+  if (e.key === "Enter") sendChatMessage();
+};
+document.getElementById("testAI").onclick = testAIConnection;
+document.getElementById("compileToPipeline").onclick = compileWorkflowToPipeline;
+document.getElementById("suggestPipeline").onclick = () => aiSuggestPipeline();
+document.getElementById("createOffer").onclick = async () => {
+  const offer = await P2P.connect();
+  document.getElementById("peerOffer").value = JSON.stringify(offer);
+};
+
+document.getElementById("acceptOffer").onclick = async () => {
+  const val = document.getElementById("peerOffer").value.trim();
+  if (!val) return alert("Paste offer first!");
+  const remote = JSON.parse(val);
+  const answer = await P2P.answer(remote);
+  alert("Send this answer back to your peer:\n" + JSON.stringify(answer));
+};
+
+
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+window.addEventListener("DOMContentLoaded", async () => {
+  await initHelia();
+  loadDID();
+  await initStorage(); 
+  renderBalance?.();
+  renderDashboard?.();
+  console.log("⚡ I-AM-Chain initialized with extended modules");
+});
+
+
+
+</script>
+</body>
+</html>
+><script src="sha3.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.2.0/crypto-js.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/ipfs-core@0.18.1/dist/index.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tweetnacl@1.0.3/nacl.min.js"></script>
