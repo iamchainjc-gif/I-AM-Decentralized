@@ -1,0 +1,380 @@
+#!/usr/bin/env node
+/**
+ * merge-html.js
+ *
+ * Pure Node.js script (no external deps) to merge all .html files in a directory
+ * into a single HTML file. Usage:
+ *
+ *   node merge-html.js /path/to/dir [output.html] [--recursive]
+ *
+ * Behavior:
+ * - Finds all .html files (non-recursive by default; use --recursive to traverse).
+ * - For each file, extracts <head> and <body> contents using simple HTML-safe regexes.
+ * - Collects head items: <meta>, <title> (first file wins), <style>, and <link rel="stylesheet">.
+ *   - For local stylesheet links, it attempts to read the file and inline as <style>.
+ *   - For remote stylesheet links (http/https), it will try to fetch and inline if `fetch` is available
+ *     in the running Node version; otherwise it leaves the <link> tag as-is.
+ * - Collects <script> blocks (head and body), preserves order across files. For external script src:
+ *   - If local path, it attempts to read and inline.
+ *   - If remote (http/https), it will try to fetch and inline if `fetch` exists; otherwise it
+ *     leaves the external <script src="..."> tag.
+ * - Merges bodies in file order and appends all scripts at the end of the merged <body> in preserved order.
+ * - Deduplicates identical stylesheet hrefs and script srcs when possible.
+ *
+ * Notes & caveats:
+ * - This script uses regex-based extraction; it's suitable for well-formed HTML but not a full HTML parser.
+ * - Remote inlining depends on global fetch support in Node (Node 18+). If unavailable, external resources
+ *   are left referenced (not inlined).
+ * - Relative assets are resolved relative to each HTML file location.
+ *
+ * Example:
+ *   node merge-html.js ./src merged.html --recursive
+ *
+ * Author: Copied -> adapted for your request (pure JS)
+ */
+
+const fs = require('fs').promises;
+const path = require('path');
+
+async function exists(p) {
+  try { await fs.access(p); return true; } catch (e) { return false; }
+}
+
+function collectHtmlFiles(dir, recursive = false) {
+  // returns list of absolute file paths (only .html/.htm)
+  const results = [];
+  async function walk(current) {
+    const entries = await fs.readdir(current, { withFileTypes: true });
+    for (const e of entries) {
+      const full = path.join(current, e.name);
+      if (e.isDirectory()) {
+        if (recursive) await walk(full);
+      } else if (e.isFile()) {
+        const ext = path.extname(e.name).toLowerCase();
+        if (ext === '.html' || ext === '.htm') results.push(full);
+      }
+    }
+  }
+  return (async () => { await walk(dir); return results; })();
+}
+
+// Simple helpers to extract head/body and tags (regex-based)
+function extractTagContent(html, tag) {
+  const re = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i');
+  const m = html.match(re);
+  return m ? m[1] : '';
+}
+
+function extractAllTagMatches(html, tag) {
+  const re = new RegExp(`<${tag}\\b([\\s\\S]*?)>([\\s\\S]*?)<\\/${tag}>`, 'gi');
+  const out = [];
+  let m;
+  while ((m = re.exec(html)) !== null) {
+    out.push({ attrsRaw: m[1], inner: m[2], fullMatch: m[0] });
+  }
+  return out;
+}
+
+function extractTagAttributes(attrsRaw) {
+  const attrs = {};
+  const re = /([a-zA-Z0-9:-]+)(?:\s*=\s*(?:'([^']*)'|"([^"]*)"|([^>\s]+)))?/g;
+  let m;
+  while ((m = re.exec(attrsRaw)) !== null) {
+    const name = m[1].toLowerCase();
+    const value = m[2] ?? m[3] ?? m[4] ?? '';
+    attrs[name] = value;
+  }
+  return attrs;
+}
+
+function findLinkTags(headHtml) {
+  const re = /<link\b[^>]*>/gi;
+  const out = [];
+  let m;
+  while ((m = re.exec(headHtml)) !== null) {
+    const tag = m[0];
+    // extract attributes
+    const attrs = extractTagAttributes(tag);
+    out.push({ full: tag, attrs });
+  }
+  return out;
+}
+
+function findStyleTags(headHtml) {
+  const re = /<style\b[^>]*>([\s\S]*?)<\/style>/gi;
+  const out = [];
+  let m;
+  while ((m = re.exec(headHtml)) !== null) {
+    out.push({ full: m[0], inner: m[1] });
+  }
+  return out;
+}
+
+function findMetaAndTitle(headHtml) {
+  const metas = [];
+  const metaRe = /<meta\b[^>]*>/gi;
+  let m;
+  while ((m = metaRe.exec(headHtml)) !== null) {
+    metas.push(m[0]);
+  }
+  const titleRe = /<title\b[^>]*>([\s\S]*?)<\/title>/i;
+  const tm = headHtml.match(titleRe);
+  const title = tm ? tm[1] : null;
+  return { metas, title };
+}
+
+function stripScriptsFromHtml(html) {
+  return html.replace(/<script\b[\s\S]*?<\/script>/gi, '');
+}
+
+function findAllScriptTags(html) {
+  const re = /<script\b([\s\S]*?)>([\s\S]*?)<\/script>/gi;
+  const out = [];
+  let m;
+  while ((m = re.exec(html)) !== null) {
+    const attrsRaw = m[1];
+    const inner = m[2];
+    const attrs = extractTagAttributes(attrsRaw);
+    out.push({ attrs, inner, full: m[0] });
+  }
+  return out;
+}
+
+function isRemoteUrl(u) {
+  return /^https?:\/\//i.test(u);
+}
+
+async function tryReadLocalOrFetch(resolved, originalRef) {
+  // resolved: filesystem path or remote URL
+  if (isRemoteUrl(resolved)) {
+    if (typeof fetch === 'function') {
+      try {
+        const r = await fetch(resolved);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return await r.text();
+      } catch (e) {
+        return null;
+      }
+    } else {
+      // no fetch available in runtime -> can't fetch
+      return null;
+    }
+  } else {
+    // local file
+    try {
+      return await fs.readFile(resolved, 'utf8');
+    } catch (e) {
+      return null;
+    }
+  }
+}
+
+async function processHtmlFile(filePath, state) {
+  const text = await fs.readFile(filePath, 'utf8');
+  const headHtml = extractTagContent(text, 'head') || '';
+  const bodyHtml = extractTagContent(text, 'body') || stripScriptsFromHtml(text) || '';
+
+  // 1) Head: meta/title/style/link
+  const { metas, title } = findMetaAndTitle(headHtml);
+  for (const m of metas) {
+    if (!state.seenHeadStrings.has(m)) {
+      state.headItems.push(m);
+      state.seenHeadStrings.add(m);
+    }
+  }
+  if (title && !state.title) {
+    state.title = title;
+  }
+
+  // Stylesheets: <link rel="stylesheet" href="...">
+  const linkTags = findLinkTags(headHtml);
+  for (const link of linkTags) {
+    const rel = (link.attrs.rel || '').toLowerCase();
+    const href = link.attrs.href || link.attrs.src || '';
+    if (rel === 'stylesheet' && href) {
+      const resolved = isRemoteUrl(href) ? href : path.resolve(path.dirname(filePath), href);
+      if (state.seenStyleHrefs.has(resolved)) continue;
+      state.seenStyleHrefs.add(resolved);
+
+      const css = await tryReadLocalOrFetch(resolved, href);
+      if (css !== null) {
+        // inline
+        state.styles.push({ from: resolved, css });
+      } else {
+        // leave as link tag (make href absolute-ish when local)
+        const hrefOut = href;
+        const tag = `<link rel="stylesheet" href="${hrefOut}">`;
+        if (!state.seenHeadStrings.has(tag)) {
+          state.headItems.push(tag);
+          state.seenHeadStrings.add(tag);
+        }
+      }
+    } else {
+      // other link tags (favicon etc) keep
+      if (!state.seenHeadStrings.has(link.full)) {
+        state.headItems.push(link.full);
+        state.seenHeadStrings.add(link.full);
+      }
+    }
+  }
+
+  // <style> tags
+  const styleTags = findStyleTags(headHtml);
+  for (const s of styleTags) {
+    if (!state.seenStyleContents.has(s.inner)) {
+      state.styles.push({ from: filePath + ' <style>', css: s.inner });
+      state.seenStyleContents.add(s.inner);
+    }
+  }
+
+  // 2) Body content (non-script)
+  const bodyWithoutScripts = stripScriptsFromHtml(bodyHtml);
+  if (bodyWithoutScripts && bodyWithoutScripts.trim()) {
+    state.bodies.push({ file: filePath, html: bodyWithoutScripts });
+  }
+
+  // 3) Scripts (head + body)
+  const scripts = findAllScriptTags(text); // find scripts across whole file to preserve order
+  for (const s of scripts) {
+    const src = s.attrs.src || '';
+    if (src) {
+      const resolved = isRemoteUrl(src) ? src : path.resolve(path.dirname(filePath), src);
+      if (state.seenScriptHrefs.has(resolved)) {
+        // Skip duplicate external script references
+        continue;
+      }
+      state.seenScriptHrefs.add(resolved);
+      const js = await tryReadLocalOrFetch(resolved, src);
+      if (js !== null) {
+        state.scripts.push({ inline: true, content: `/* inlined from ${resolved} */\n` + js, attrs: s.attrs });
+      } else {
+        // fallback: keep as external, preserve attributes (use original src value)
+        state.scripts.push({ inline: false, src, attrs: s.attrs });
+      }
+    } else {
+      // inline script content
+      const content = s.inner || '';
+      if (!state.seenInlineScriptContents.has(content)) {
+        state.scripts.push({ inline: true, content, attrs: s.attrs });
+        state.seenInlineScriptContents.add(content);
+      }
+    }
+  }
+}
+
+async function buildMergedHtml(state) {
+  const lines = [];
+  lines.push('<!doctype html>');
+  lines.push('<html lang="en">');
+  lines.push('<head>');
+  lines.push('  <meta charset="utf-8">');
+  // include collected head items (meta, link fallbacks)
+  for (const h of state.headItems) {
+    lines.push('  ' + h);
+  }
+  // include inlined styles
+  if (state.styles.length) {
+    lines.push('  <style>');
+    for (const s of state.styles) {
+      lines.push(`/* inlined from ${s.from} */`);
+      lines.push(s.css);
+      lines.push('\n');
+    }
+    lines.push('  </style>');
+  }
+  // title
+  if (state.title) {
+    lines.push(`  <title>${state.title}</title>`);
+  }
+  lines.push('</head>');
+  lines.push('<body>');
+  // append bodies
+  for (const b of state.bodies) {
+    lines.push(`<!-- content from: ${b.file} -->`);
+    lines.push(b.html);
+    lines.push('\n');
+  }
+  // append scripts in order
+  for (const s of state.scripts) {
+    if (s.inline) {
+      const attrs = Object.entries(s.attrs || {}).filter(([k]) => k !== 'src').map(([k,v]) => v === '' ? k : `${k}="${v.replace(/"/g,'&quot;')}"`).join(' ');
+      if (attrs) {
+        lines.push(`<script ${attrs}>`);
+      } else {
+        lines.push('<script>');
+      }
+      lines.push(s.content);
+      lines.push('</script>');
+    } else {
+      // external fallback
+      const attrs = Object.entries(s.attrs || {}).map(([k,v]) => v === '' ? k : `${k}="${v.replace(/"/g,'&quot;')}"`).join(' ');
+      // ensure src present
+      const src = s.src || (s.attrs && s.attrs.src) || '';
+      lines.push(`<script src="${src}" ${attrs}></script>`);
+    }
+  }
+
+  lines.push('</body>');
+  lines.push('</html>');
+  return lines.join('\n');
+}
+
+async function main() {
+  const argv = process.argv.slice(2);
+  if (argv.length < 1) {
+    console.error('Usage: node merge-html.js /path/to/dir [output.html] [--recursive]');
+    process.exit(2);
+  }
+  const dir = path.resolve(argv[0]);
+  const outFile = argv[1] && !argv[1].startsWith('--') ? argv[1] : 'merged.html';
+  const recursive = argv.includes('--recursive');
+
+  if (!(await exists(dir))) {
+    console.error('Directory does not exist:', dir);
+    process.exit(2);
+  }
+  const files = await collectHtmlFiles(dir, recursive);
+  if (files.length === 0) {
+    console.error('No .html files found in', dir);
+    process.exit(1);
+  }
+
+  // Sort files deterministic (alphabetical)
+  files.sort();
+
+  console.log(`Found ${files.length} html file(s). Merging in order:`);
+  for (const f of files) console.log(' -', f);
+
+  // shared state accumulators
+  const state = {
+    headItems: [],           // raw head strings (meta, fallback link tags, etc)
+    styles: [],              // { from, css }
+    scripts: [],             // { inline:bool, content?, src?, attrs }
+    bodies: [],              // { file, html }
+    seenHeadStrings: new Set(),
+    seenStyleHrefs: new Set(),
+    seenStyleContents: new Set(),
+    seenScriptHrefs: new Set(),
+    seenInlineScriptContents: new Set(),
+    title: null
+  };
+
+  for (const f of files) {
+    console.log('Processing', f);
+    try {
+      await processHtmlFile(f, state);
+    } catch (err) {
+      console.error('Error processing', f, err);
+    }
+  }
+
+  const merged = await buildMergedHtml(state);
+  await fs.writeFile(outFile, merged, 'utf8');
+  console.log(`Merged HTML written to ${outFile}`);
+  console.log('Done.');
+}
+
+main().catch(err => {
+  console.error('Fatal error:', err);
+  process.exit(1);
+});
